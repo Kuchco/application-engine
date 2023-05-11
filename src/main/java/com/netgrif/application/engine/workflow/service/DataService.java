@@ -214,7 +214,12 @@ public class DataService implements IDataService {
                         outcome.setMessage(dataSet.get(fieldId).getEvents().get(DataEventType.SET).getMessage());
                     }
                 }
-                Object newValue = parseFieldsValues(entry.getValue(), dataField);
+                Object newValue;
+                if (field instanceof CollectionField) {
+                    newValue = parseFieldsValues(entry.getValue(), dataField, field.getType(), ((CollectionField<?>) field).getCollectionDataType());
+                } else {
+                    newValue = parseFieldsValues(entry.getValue(), dataField);
+                }
                 dataField.setValue(newValue);
                 ChangedField changedField = new ChangedField();
                 changedField.setId(fieldId);
@@ -387,10 +392,10 @@ public class DataService implements IDataService {
             return null;
 
         workflowService.save(useCase);
-        field.setValue((FileListFieldValue) useCase.getFieldValue(field.getStringId()));
+        field.setValue((Collection) useCase.getFieldValue(field.getStringId()));
 
-        Optional<FileFieldValue> fileField = field.getValue().getNamesPaths().stream().filter(namePath -> namePath.getName().equals(name)).findFirst();
-        if (!fileField.isPresent() || fileField.get().getPath() == null) {
+        Optional<FileFieldValue> fileField = findFileFieldValueByName(name, field);
+        if (fileField.isEmpty() || fileField.get().getPath() == null) {
             log.error("File " + name + " not found!");
             return null;
         }
@@ -546,11 +551,11 @@ public class DataService implements IDataService {
 
     private boolean saveLocalFiles(Case useCase, FileListField field, MultipartFile[] multipartFiles) {
         for (MultipartFile oneFile : multipartFiles) {
-            if (field.getValue() != null && field.getValue().getNamesPaths() != null) {
-                Optional<FileFieldValue> fileField = field.getValue().getNamesPaths().stream().filter(namePath -> namePath.getName().equals(oneFile.getOriginalFilename())).findFirst();
+            if (field.getValue() != null) {
+                Optional<FileFieldValue> fileField = findFileFieldValueByName(oneFile.getOriginalFilename(), field);
                 if (fileField.isPresent()) {
                     new File(field.getFilePath(useCase.getStringId(), oneFile.getOriginalFilename())).delete();
-                    field.getValue().getNamesPaths().remove(fileField.get());
+                    field.getValue().remove(fileField.get());
                 }
             }
 
@@ -651,25 +656,34 @@ public class DataService implements IDataService {
         Case useCase = pair.getLeft();
         Task task = taskService.findOne(taskId);
 
-        Optional<FileFieldValue> fileField = field.getValue().getNamesPaths().stream().filter(namePath -> namePath.getName().equals(name)).findFirst();
+        Optional<FileFieldValue> fileField = findFileFieldValueByName(name, field);
 
         if (fileField.isPresent()) {
             if (field.isRemote()) {
                 deleteRemote(useCase, field, name);
             } else {
                 new File(fileField.get().getPath()).delete();
-                field.getValue().getNamesPaths().remove(fileField.get());
+                field.getValue().remove(fileField.get());
             }
             useCase.getDataSet().get(field.getStringId()).setValue(field.getValue());
         }
         return new SetDataEventOutcome(useCase, task, getChangedFieldByFileFieldContainer(fieldId, task, useCase));
     }
 
+    private static Optional<FileFieldValue> findFileFieldValueByName(String name, FileListField field) {
+        Optional<FileFieldValue> fileField = field.getValue().stream()
+                .filter(serializable -> serializable instanceof FileFieldValue)
+                .map(fileFieldValue -> (FileFieldValue) fileFieldValue)
+                .filter(namePath -> namePath.getName().equals(name))
+                .findFirst();
+        return fileField;
+    }
+
     private ImmutablePair<Case, FileListField> getCaseAndFileListField(String taskId, String fieldId) {
         Task task = taskService.findOne(taskId);
         Case useCase = workflowService.findOne(task.getCaseId());
         FileListField field = (FileListField) useCase.getPetriNet().getDataSet().get(fieldId);
-        field.setValue((FileListFieldValue) useCase.getDataField(field.getStringId()).getValue());
+        field.setValue((Collection) useCase.getDataField(field.getStringId()).getValue());
         return new ImmutablePair<>(useCase, field);
     }
 
@@ -709,6 +723,10 @@ public class DataService implements IDataService {
     }
 
     private Object parseFieldsValues(JsonNode jsonNode, DataField dataField) {
+        return parseFieldsValues(jsonNode, dataField, null, "");
+    }
+
+    private Object parseFieldsValues(JsonNode jsonNode, DataField dataField, FieldType collectionType, String collectionDataType) {
         ObjectNode node = (ObjectNode) jsonNode;
         Object value;
         switch (getFieldTypeFromNode(node)) {
@@ -730,18 +748,19 @@ public class DataService implements IDataService {
                 value = !(node.get("value") == null || node.get("value").isNull()) && node.get("value").asBoolean();
                 break;
             case "multichoice":
-                value = parseMultichoiceFieldValues(node).stream().map(I18nString::new).collect(Collectors.toSet());
-                break;
             case "multichoice_map":
-                value = parseMultichoiceFieldValues(node);
+                value = parseMultichoiceFieldValues(node, collectionDataType);
                 break;
             case "enumeration":
+            case "enumeration_map":
                 if (node.get("value") == null || node.get("value").asText() == null) {
                     value = null;
                     break;
                 }
-                String val = node.get("value").asText();
-                value = new I18nString(val);
+                value = fieldFactory.resolveCollectionValue(node.get("value").asText(), collectionDataType);
+                break;
+            case "list":
+                value = parseListValues(node, collectionDataType);
                 break;
             case "user":
                 if (node.get("value") == null || node.get("value").isNull()) {
@@ -815,10 +834,20 @@ public class DataService implements IDataService {
         else return value;
     }
 
-    private Set<String> parseMultichoiceFieldValues(ObjectNode node) {
+    private Object parseListValues(ObjectNode node, String collectionDataType) {
+        List<String> parsedValues = parseListStringValues(node);
+        if (parsedValues == null) {
+            return null;
+        }
+        return parsedValues.stream()
+                .map(val1 -> fieldFactory.resolveCollectionValue(val1, collectionDataType))
+                .collect(Collectors.toList());
+    }
+
+    private Set<Serializable> parseMultichoiceFieldValues(ObjectNode node, String collectionDataType) {
         ArrayNode arrayNode = (ArrayNode) node.get("value");
-        HashSet<String> set = new HashSet<>();
-        arrayNode.forEach(item -> set.add(item.asText()));
+        HashSet<Serializable> set = new HashSet<>();
+        arrayNode.forEach(item -> set.add(fieldFactory.resolveCollectionValue(item.asText(), collectionDataType)));
         return set;
     }
 

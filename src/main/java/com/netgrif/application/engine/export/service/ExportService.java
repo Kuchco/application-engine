@@ -257,7 +257,7 @@ class ExportService implements IExportService {
                 fieldValue = ((FileField) fieldData).getValue().toString();
                 break;
             case FILELIST:
-                fieldValue = String.join(",", ((FileListField) fieldData).getValue().getNamesPaths().stream().map(FileFieldValue::toString).collect(Collectors.toSet()));
+                fieldValue = String.join(",", ((FileListField) fieldData).getValue().stream().map(FileFieldValue::toString).collect(Collectors.toSet()));
                 break;
             case TASK_REF:
                 fieldValue = String.join(";", ((TaskField) fieldData).getValue());

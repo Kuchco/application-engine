@@ -2,7 +2,7 @@ package com.netgrif.application.engine.petrinet.domain.dataset
 
 import com.netgrif.application.engine.auth.domain.IUser
 
-class UserFieldValue {
+class UserFieldValue implements Serializable{
 
     protected String id
 

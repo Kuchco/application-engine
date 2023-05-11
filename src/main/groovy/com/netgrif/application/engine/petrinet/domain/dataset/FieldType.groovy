@@ -22,7 +22,9 @@ enum FieldType {
     BUTTON("button"),
     TASK_REF("taskRef"),
     FILTER("filter"),
-    I18N("i18n")
+    I18N("i18n"),
+    COLLECTION("collection"),
+    LIST("list")
 
     String name
 

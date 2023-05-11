@@ -1,10 +1,7 @@
 package com.netgrif.application.engine.importer.service;
 
 
-import com.netgrif.application.engine.importer.model.Data;
-import com.netgrif.application.engine.importer.model.DataType;
-import com.netgrif.application.engine.importer.model.Option;
-import com.netgrif.application.engine.importer.model.Property;
+import com.netgrif.application.engine.importer.model.*;
 import com.netgrif.application.engine.importer.service.throwable.MissingIconKeyException;
 import com.netgrif.application.engine.petrinet.domain.Component;
 import com.netgrif.application.engine.petrinet.domain.I18nString;
@@ -50,10 +47,10 @@ public class ComponentFactory {
         return properties;
     }
 
-    public static List<Icon> buildIconsListWithValues(List<com.netgrif.application.engine.importer.model.Icon> iconList, Set<I18nString> values, String fieldId) throws MissingIconKeyException {
+    public static List<Icon> buildIconsListWithValues(List<com.netgrif.application.engine.importer.model.Icon> iconList, Set<String> values, String fieldId) throws MissingIconKeyException {
         List<Icon> icons = new ArrayList<>();
         for (com.netgrif.application.engine.importer.model.Icon icon : iconList) {
-            if (icon.getKey() != null && values.stream().map(I18nString::getDefaultValue).anyMatch(str -> str.equals(icon.getKey()))) {
+            if (icon.getKey() != null && values.stream().anyMatch(str -> str.equals(icon.getKey()))) {
                 if (icon.getType() == null) {
                     icons.add(new Icon(icon.getKey(), icon.getValue()));
                 } else {
@@ -84,9 +81,9 @@ public class ComponentFactory {
 
     private Component resolveComponent(com.netgrif.application.engine.importer.model.Component importComponent, Importer importer, Data data, Field field) throws MissingIconKeyException {
         if (data != null) {
-            if ((data.getType() == DataType.ENUMERATION || data.getType() == DataType.MULTICHOICE) && data.getValues() != null && !data.getValues().isEmpty()) {
+            if ((data.getType() == DataType.COLLECTION) && data.getValues() != null && !data.getValues().isEmpty()) {
                 return new Component(importComponent.getName(), buildPropertyMap(importComponent.getProperties().getProperty()),
-                        buildIconsListWithValues(importComponent.getProperties().getOptionIcons().getIcon(), data.getValues().stream().map(importer::toI18NString).collect(Collectors.toSet()), data.getId()));
+                        buildIconsListWithValues(importComponent.getProperties().getOptionIcons().getIcon(), data.getValues().stream().map(I18NStringType::getValue).collect(Collectors.toSet()), data.getId()));
             } else if (data.getOptions() != null && !data.getOptions().getOption().isEmpty()) {
                 return new Component(importComponent.getName(), buildPropertyMap(importComponent.getProperties().getProperty()),
                         buildIconsListWithOptions(importComponent.getProperties().getOptionIcons().getIcon(), data.getOptions().getOption().stream()
@@ -95,7 +92,7 @@ public class ComponentFactory {
         }
         if (field instanceof EnumerationField) {
             return new Component(importComponent.getName(), buildPropertyMap(importComponent.getProperties().getProperty()),
-                    buildIconsListWithValues(importComponent.getProperties().getOptionIcons().getIcon(), ((EnumerationField) field).getChoices(), field.getImportId()));
+                    buildIconsListWithValues(importComponent.getProperties().getOptionIcons().getIcon(), ((EnumerationField) field).getStringChoices(), field.getImportId()));
         }
         return new Component(importComponent.getName(), buildPropertyMap(importComponent.getProperties().getProperty()),
                 buildIconsListWithOptions(importComponent.getProperties().getOptionIcons().getIcon(), ((EnumerationMapField) field).getOptions(), field.getImportId()));

@@ -1,32 +1,37 @@
 package com.netgrif.application.engine.petrinet.domain.dataset
 
-class FileListField extends Field<FileListFieldValue> {
+import com.netgrif.application.engine.configuration.ApplicationContextProvider
+import com.netgrif.application.engine.workflow.domain.FileStorageConfiguration
+
+class FileListField extends CollectionField<HashSet<FileFieldValue>> {
     private Boolean remote
 
     FileListField() {
         super()
     }
 
-    @Override
-    FieldType getType() {
-        return FieldType.FILELIST
+    FileListField(String collectionDataType) {
+        super(collectionDataType)
     }
 
-
-    @Override
-    void setValue(FileListFieldValue value) {
+    void setValue(Collection<FileFieldValue> value) {
         if (value instanceof String)
             this.setValue((String) value)
         else
-            super.setValue(value)
+            super.setValue(new HashSet(value))
     }
 
     void setValue(String value) {
-        this.setValue(FileListFieldValue.fromString(value))
+        this.setValue(fromString(value))
     }
 
     @Override
-    void setDefaultValue(FileListFieldValue defaultValue) {
+    FieldType getType() {
+        return FieldType.LIST
+    }
+
+    @Override
+    void setDefaultValue(HashSet<FileFieldValue> defaultValue) {
         if (value instanceof String)
             this.setDefaultValue((String) value)
         else
@@ -34,18 +39,18 @@ class FileListField extends Field<FileListFieldValue> {
     }
 
     void setDefaultValue(String defaultValue) {
-        this.setDefaultValue(FileListFieldValue.fromString(defaultValue))
+        this.setDefaultValue(fromString(defaultValue))
     }
 
     void setDefaultValue(List<String> defaultValues) {
-        this.setDefaultValue(FileListFieldValue.fromList(defaultValues))
+        this.setDefaultValue(fromList(defaultValues))
     }
 
     void addValue(String fileName, String path) {
-        if (this.getValue() == null || this.getValue().getNamesPaths() == null) {
-            this.setValue(new FileListFieldValue())
+        if (this.getValue() == null) {
+            this.setValue(new HashSet<FileFieldValue>())
         }
-        this.getValue().getNamesPaths().add(new FileFieldValue(fileName, path))
+        this.getValue().add(new FileFieldValue(fileName, path))
     }
 
     /**
@@ -60,10 +65,37 @@ class FileListField extends Field<FileListFieldValue> {
      */
     String getFilePath(String caseId, String name) {
         if (this.remote) {
-            FileFieldValue first = this.getValue().getNamesPaths().find({ namePath -> namePath.name == name })
+            FileFieldValue first = this.getValue().find({ namePath -> ((FileFieldValue) namePath.value).name == name }).value as FileFieldValue
             return first != null ? first.path : null
         }
-        return FileListFieldValue.getPath(caseId, getStringId(), name)
+        return getPath(caseId, getStringId(), name)
+    }
+
+    static HashSet<FileFieldValue> fromString(String value) {
+        if (value == null) value = ""
+        return buildValueFromParts(Arrays.asList(value.split(",")))
+    }
+
+    static HashSet<FileFieldValue> fromList(List<String> value) {
+        return buildValueFromParts(value)
+    }
+
+    private static HashSet<FileFieldValue> buildValueFromParts(List<String> parts) {
+        HashSet<FileFieldValue> newVal = new HashSet<FileFieldValue>()
+        for (String part : parts) {
+            if (!part.contains(":"))
+                newVal.add(new FileFieldValue(part, null))
+            else {
+                String[] filePart = part.split(":", 2)
+                newVal.add(new FileFieldValue(filePart[0], filePart[1]))
+            }
+        }
+        return newVal
+    }
+
+    static String getPath(String caseId, String fieldId, String name) {
+        FileStorageConfiguration fileStorageConfiguration = ApplicationContextProvider.getBean("fileStorageConfiguration")
+        return "${fileStorageConfiguration.getStoragePath()}/${caseId}/${fieldId}/${name}"
     }
 
     boolean isRemote() {
@@ -79,7 +111,7 @@ class FileListField extends Field<FileListFieldValue> {
         FileListField clone = new FileListField()
         super.clone(clone)
         clone.remote = this.remote
-
+        clone.collectionDataType = this.collectionDataType
         return clone
     }
 }

@@ -3,6 +3,7 @@ package com.netgrif.application.engine.importer.service;
 import com.netgrif.application.engine.auth.domain.IUser;
 import com.netgrif.application.engine.auth.service.interfaces.IUserService;
 import com.netgrif.application.engine.importer.model.*;
+import com.netgrif.application.engine.importer.model.CollectionType;
 import com.netgrif.application.engine.importer.service.throwable.MissingIconKeyException;
 import com.netgrif.application.engine.petrinet.domain.Component;
 import com.netgrif.application.engine.petrinet.domain.Format;
@@ -17,6 +18,7 @@ import com.netgrif.application.engine.workflow.service.interfaces.IDataValidatio
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -53,6 +55,9 @@ public final class FieldFactory {
     Field getField(Data data, Importer importer) throws IllegalArgumentException, MissingIconKeyException {
         Field field;
         switch (data.getType()) {
+            case COLLECTION:
+                field = buildCollectionField(data, importer);
+                break;
             case TEXT:
                 field = buildTextField(data);
                 break;
@@ -65,23 +70,11 @@ public final class FieldFactory {
             case FILE:
                 field = buildFileField(data);
                 break;
-            case FILE_LIST:
-                field = buildFileListField(data);
-                break;
-            case ENUMERATION:
-                field = buildEnumerationField(data, importer);
-                break;
-            case MULTICHOICE:
-                field = buildMultichoiceField(data, importer);
-                break;
             case NUMBER:
                 field = buildNumberField(data);
                 break;
             case USER:
                 field = buildUserField(data, importer);
-                break;
-            case USER_LIST:
-                field = buildUserListField(data);
                 break;
             case CASE_REF:
                 field = buildCaseField(data);
@@ -179,46 +172,81 @@ public final class FieldFactory {
     }
 
     private MultichoiceField buildMultichoiceField(Data data, Importer importer) {
-        MultichoiceField field = new MultichoiceField();
+        MultichoiceField field;
+        String collectionDataType = data.getCollectionDataType() != null ? data.getCollectionDataType().value() : FieldType.I18N.name();
+        field = new MultichoiceField(collectionDataType);
         if (data.getOptions() != null) {
             setFieldOptions(field, data, importer);
-        } else {
-            setFieldChoices(field, data, importer);
         }
-        setDefaultValues(field, data, init -> {
-            if (init != null && !init.isEmpty()) {
-                field.setDefaultValues(init);
+        setDefaultValues(field, data, inits -> {
+            if (inits != null && !inits.isEmpty()) {
+                field.setDefaultValues(inits.stream()
+                        .map(init -> resolveCollectionValue(init, collectionDataType))
+                        .collect(Collectors.toList()));
             }
         });
         return field;
+    }
+
+    private CollectionField<?> buildCollectionField(Data data, Importer importer) {
+        if (data.getCollectionType() == null) {
+            throw new IllegalArgumentException("Collection type for " + data.getType() + " was not specified.");
+        }
+        CollectionType collectionType = data.getCollectionType();
+        switch (collectionType) {
+            case ENUMERATION:
+                return buildEnumerationField(data, importer);
+            case MULTICHOICE:
+                return buildMultichoiceField(data, importer);
+            case LIST:
+                return buildListField(data);
+            default:
+                throw new IllegalArgumentException("Collection type " + data.getCollectionType() + " is not a valid value.");
+        }
+    }
+
+    private CollectionField<? extends Collection<? extends Serializable>> buildListField(Data data) {
+        if (data.getCollectionDataType().equals(DataType.FILE)) {
+            FileListField fileListField = buildFileListField(data);
+            fileListField.setDefaultValue(new HashSet<>());
+            fileListField.setCollectionDataType(data.getCollectionDataType().value());
+            return fileListField;
+        }
+        ListField listField = new ListField(data.getCollectionDataType().value());
+        setDefaultValues(listField, data, inits -> {
+            listField.setDefaultValue(inits.stream()
+                    .map(init -> resolveCollectionValue(init, listField.getCollectionDataType()))
+                    .collect(Collectors.toList()));
+        });
+        return listField;
     }
 
     private EnumerationField buildEnumerationField(Data data, Importer importer) {
-        EnumerationField field = new EnumerationField();
+        EnumerationField field;
+        String collectionDataType = data.getCollectionDataType() != null ? data.getCollectionDataType().value() : FieldType.I18N.name();
+        field = new EnumerationField(collectionDataType);
         if (data.getOptions() != null) {
             setFieldOptions(field, data, importer);
-        } else {
-            setFieldChoices(field, data, importer);
         }
         setDefaultValue(field, data, init -> {
             if (init != null && !init.equals("")) {
-                field.setDefaultValue(init);
+                field.setDefaultValue(resolveCollectionValue(init, collectionDataType));
             }
         });
         return field;
     }
 
-    private void setFieldChoices(ChoiceField<?> field, Data data, Importer importer) {
-        if (data.getValues() != null && !data.getValues().isEmpty() && data.getValues().get(0).isDynamic()) {
-            field.setExpression(new Expression(data.getValues().get(0).getValue()));
-
-        } else if (data.getValues() != null) {
-            List<I18nString> choices = data.getValues().stream()
-                    .map(importer::toI18NString)
-                    .collect(Collectors.toList());
-            field.getChoices().addAll(choices);
-        }
-    }
+//    private void setFieldChoices(ChoiceField<?> field, Data data, Importer importer) {
+//        if (data.getValues() != null && !data.getValues().isEmpty() && data.getValues().get(0).isDynamic()) {
+//            field.setExpression(new Expression(data.getValues().get(0).getValue()));
+//
+//        } else if (data.getValues() != null) {
+//            List<CollectionValue> choices = data.getValues().stream()
+//                    .map(option -> resolveLol1(option, importer, field.getCollectionType()))
+//                    .collect(Collectors.toList());
+//            field.getChoices().addAll(choices);
+//        }
+//    }
 
     private MultichoiceMapField buildMultichoiceMapField(Data data, Importer importer) {
         MultichoiceMapField field = new MultichoiceMapField();
@@ -248,10 +276,41 @@ public final class FieldFactory {
             return;
         }
 
-        List<I18nString> options = (data.getOptions() == null) ? new ArrayList<>() : data.getOptions().getOption().stream()
-                .map(importer::toI18NString)
+        List<Serializable> options = (data.getOptions() == null) ? new ArrayList<>() : data.getOptions().getOption().stream()
+                .map(option -> resolveLol1(option, importer, field.getCollectionDataType()))
                 .collect(Collectors.toList());
         field.getChoices().addAll(options);
+    }
+
+    public Serializable resolveCollectionValue(String value, String fieldType) {
+        FieldType collectionDataType = FieldType.fromString(fieldType);
+        switch (collectionDataType) {
+            case DATE:
+                return parseDate(value);
+            case NUMBER:
+                return Double.parseDouble(value);
+            case TEXT:
+                return value;
+            case FILE:
+                return FileFieldValue.fromString(value);
+            case DATETIME:
+                return parseDateTime(value);
+            case I18N:
+                return new I18nString(value.trim());
+            case USER:
+                IUser user = userService.resolveById(value, true);
+                return new UserFieldValue(user);
+            default:
+                return null;
+        }
+    }
+
+    private Serializable resolveLol1(I18NStringType option, Importer importer, String collectionDataType) {
+        FieldType collectionDataTypeParsed = FieldType.fromString(collectionDataType);
+        if (FieldType.I18N.equals(collectionDataTypeParsed)) {
+            return importer.toI18NString(option);
+        }
+        return resolveCollectionValue(option.getValue(), collectionDataType);
     }
 
     private void setFieldOptions(MapOptionsField<I18nString, ?> field, Data data, Importer importer) {
@@ -459,7 +518,7 @@ public final class FieldFactory {
     }
 
     private void resolveChoices(ChoiceField field, Case useCase) {
-        Set<I18nString> choices = useCase.getDataField(field.getImportId()).getChoices();
+        Set<Serializable> choices = useCase.getDataField(field.getImportId()).getChoices();
         if (choices == null)
             return;
         field.setChoices(choices);
@@ -527,7 +586,7 @@ public final class FieldFactory {
                 ((MultichoiceMapField) field).setOptions(getFieldOptions((MapOptionsField<?, ?>) field, useCase));
                 break;
             case MULTICHOICE:
-                field.setValue(parseMultichoiceValue(useCase, fieldId));
+                field.setValue(parseMultichoiceValue(useCase, fieldId, (MultichoiceField) field));
                 ((MultichoiceField) field).setChoices(getFieldChoices((ChoiceField<?>) field, useCase));
                 break;
             case DATETIME:
@@ -536,14 +595,11 @@ public final class FieldFactory {
             case FILE:
                 parseFileValue((FileField) field, useCase, fieldId);
                 break;
-            case FILELIST:
-                parseFileListValue((FileListField) field, useCase, fieldId);
-                break;
             case USER:
                 parseUserValues((UserField) field, useCase, fieldId);
                 break;
-            case USERLIST:
-                parseUserListValues((UserListField) field, useCase, fieldId);
+            case LIST:
+                parseListValues((CollectionField<?>) field, useCase, fieldId);
                 break;
             default:
                 field.setValue(useCase.getFieldValue(fieldId));
@@ -552,24 +608,48 @@ public final class FieldFactory {
 
     private void parseUserValues(UserField field, Case useCase, String fieldId) {
         DataField userField = useCase.getDataField(fieldId);
-        if (userField.getChoices() != null) {
-            Set<String> roles = userField.getChoices().stream().map(I18nString::getDefaultValue).collect(Collectors.toSet());
+        if (userField.getUserChoices() != null) {
+            Set<String> roles = userField.getUserChoices().stream().map(I18nString::getDefaultValue).collect(Collectors.toSet());
             field.setRoles(roles);
         }
         field.setValue((UserFieldValue) useCase.getFieldValue(fieldId));
     }
 
-    private void parseUserListValues(UserListField field, Case useCase, String fieldId) {
-        field.setValue((UserListFieldValue) useCase.getFieldValue(fieldId));
+    private void parseListValues(CollectionField<?> field, Case useCase, String fieldId) {
+        Object values = useCase.getFieldValue(fieldId);
+        if (values == null) {
+            return;
+        }
+        if (values instanceof Collection) {
+            if (field instanceof FileListField) {
+                Set<FileFieldValue> newValues = parseFileListValue((Collection<?>) values);
+                ((FileListField) field).setValue(newValues);
+            } else {
+                List<Serializable> parsedValues = ((Collection<?>) values).stream()
+                        .map(val -> val instanceof Serializable
+                                ? (Serializable) val
+                                : resolveCollectionValue(val.toString(), field.getCollectionDataType()))
+                        .collect(Collectors.toList());
+                ((ListField) field).setValue(parsedValues);
+            }
+        } else {
+            throw new IllegalArgumentException("List value: " + values + " is not a collection.");
+        }
     }
 
-    public static Set<I18nString> parseMultichoiceValue(Case useCase, String fieldId) {
+    public Set<Serializable> parseMultichoiceValue(Case useCase, String fieldId, MultichoiceField field) {
         Object values = useCase.getFieldValue(fieldId);
-        if (values instanceof ArrayList) {
-            return (Set<I18nString>) ((ArrayList) values).stream().map(val -> new I18nString(val.toString())).collect(Collectors.toSet());
-        } else {
-            return (Set<I18nString>) values;
+        if (values == null) {
+            return null;
         }
+        if (values instanceof Collection) {
+            return ((Collection<?>) values).stream()
+                    .map(val -> val instanceof Serializable
+                            ? (Serializable) val
+                            : resolveCollectionValue(val.toString(), field.getCollectionDataType()))
+                    .collect(Collectors.toSet());
+        }
+        throw new IllegalArgumentException("Multichoice value: " + values + " is not a collection.");
     }
 
     public static Set<String> parseMultichoiceMapValue(Case useCase, String fieldId) {
@@ -692,20 +772,29 @@ public final class FieldFactory {
         return null;
     }
 
-    public static I18nString parseEnumValue(Case useCase, String fieldId, EnumerationField field) {
+    public Serializable parseEnumValue(Case useCase, String fieldId, EnumerationField field) {
         Object value = useCase.getFieldValue(fieldId);
-        if (value instanceof String) {
-            for (I18nString i18nString : field.getChoices()) {
-                if (i18nString.contains((String) value)) {
-                    return i18nString;
-                }
-            }
-            return new I18nString((String) value);
-//            throw new IllegalArgumentException("Value " + value + " is not a valid value.");
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Serializable) {
+            return (Serializable) value;
         } else {
-            return (I18nString) value;
+            return resolveCollectionValue(value.toString(), field.getCollectionDataType());
         }
     }
+
+//    private boolean compareCollectionValue(Serializable first, Serializable second, String collectionDataType) {
+//        if (first == null || second == null) {
+//            return false;
+//        }
+//        if (FieldType.fromString(collectionDataType).equals(FieldType.DATETIME)) {
+//            if (first instanceof Date && second instanceof Date) {
+//                return ((Date) first).getTime() / 1000 == ((Date) second).getTime() / 1000;
+//            }
+//        }
+//        return first.equals(second);
+//    }
 
     public static String parseEnumerationMapValue(Case useCase, String fieldId) {
         Object value = useCase.getFieldValue(fieldId);
@@ -725,18 +814,18 @@ public final class FieldFactory {
             throw new IllegalArgumentException("Object " + value.toString() + " cannot be set as value to the File field [" + fieldId + "] !");
     }
 
-    private void parseFileListValue(FileListField field, Case useCase, String fieldId) {
-        Object value = useCase.getFieldValue(fieldId);
-        if (value == null)
-            return;
-
-        if (value instanceof String) {
-            field.setValue((String) value);
-        } else if (value instanceof FileListFieldValue) {
-            field.setValue((FileListFieldValue) value);
-        } else {
-            throw new IllegalArgumentException("Object " + value.toString() + " cannot be set as value to the File list field [" + fieldId + "] !");
-        }
+    private Set<FileFieldValue> parseFileListValue(Collection<?> values) {
+        return values.stream()
+                .map(val -> {
+                    if (val instanceof String) {
+                        return FileFieldValue.fromString((String) val);
+                    } else if (val instanceof FileFieldValue) {
+                        return (FileFieldValue) val;
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     private void resolveAttributeValues(Field field, Case useCase, String fieldId) {
@@ -794,7 +883,7 @@ public final class FieldFactory {
         return Collections.emptyList();
     }
 
-    private Set<I18nString> getFieldChoices(ChoiceField<?> field, Case useCase) {
+    private Set<Serializable> getFieldChoices(ChoiceField<?> field, Case useCase) {
         if (useCase.getDataField(field.getImportId()).getChoices() == null) {
             return field.getChoices();
         } else {

@@ -4,18 +4,24 @@ import com.netgrif.application.engine.petrinet.domain.I18nString
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
-class MultichoiceField extends ChoiceField<Set<I18nString>> {
+class MultichoiceField extends ChoiceField<Set<Serializable>> {
 
     MultichoiceField() {
         super()
-        super.setValue(new HashSet<I18nString>())
-        super.setDefaultValue(new HashSet<I18nString>())
+        super.setValue(new HashSet<Serializable>())
+        super.setDefaultValue(new HashSet<Serializable>())
     }
 
-    MultichoiceField(List<I18nString> values) {
-        super(values)
-        super.setValue(new HashSet<I18nString>())
-        super.setDefaultValue(new HashSet<I18nString>())
+    MultichoiceField(String collectionType) {
+        super(collectionType)
+        super.setValue(new HashSet<Serializable>())
+        super.setDefaultValue(new HashSet<Serializable>())
+    }
+
+    MultichoiceField(List<Serializable> choices, String collectionType) {
+        super(choices, collectionType)
+        super.setValue(new HashSet<Serializable>())
+        super.setDefaultValue(new HashSet<Serializable>())
     }
 
     @Override
@@ -23,66 +29,29 @@ class MultichoiceField extends ChoiceField<Set<I18nString>> {
         return FieldType.MULTICHOICE
     }
 
-    void setDefaultValue(String value) {
-        if (value == null) {
-            this.defaultValue = null
-        } else {
-            String[] vls = value.split(",")
-            def defaults = new HashSet()
-            vls.each { s ->
-                defaults << choices.find { it ->
-                    it.defaultValue == s.trim()
-                }
-            }
-            super.setDefaultValue(defaults)
-        }
-    }
-
-    void setDefaultValues(List<String> inits) {
+    void setDefaultValues(List<Serializable> inits) {
         if (inits == null || inits.isEmpty()) {
             this.defaultValue = null
         } else {
-            Set<I18nString> defaults = new HashSet<>()
+            Set<Serializable> defaults = new HashSet<>()
             inits.forEach { initValue ->
                 defaults << choices.find { choice ->
-                    choice.defaultValue == initValue.trim()
+                    {
+                        if (choice.value instanceof I18nString && initValue.value instanceof I18nString) {
+                            ((I18nString) choice.value).defaultValue == ((I18nString) initValue.value).defaultValue
+                        } else {
+                            choice == initValue
+                        }
+                    }
                 }
             }
             super.setDefaultValue(defaults)
         }
     }
 
-    void setValue(String value) {
-        I18nString i18n = choices.find { it.contains(value) }
-        if (i18n == null && value != null)
-            i18n = new I18nString(value)
-        //TODO: case save choices
-//            throw new IllegalArgumentException("Value $value is not a choice")
-        super.setValue([i18n] as Set)
-    }
-
-    void setValue(Collection<String> values) {
-        def newValues = [] as Set
-        for (String value : values) {
-            I18nString i18n = choices.find { it.contains(value) }
-            if (i18n == null && value != null)
-                i18n = new I18nString(value)
-            //TODO: case save choices
-//                throw new IllegalArgumentException("Value $value is not a choice")
-            newValues << i18n
-        }
-        super.setValue(newValues)
-    }
-
-    @Override
-    void setValue(Set<I18nString> value) {
-        super.setValue(value)
-    }
-
-
     @Override
     Field clone() {
-        MultichoiceField clone = new MultichoiceField()
+        MultichoiceField clone = new MultichoiceField(this.collectionDataType)
         super.clone(clone)
         clone.choices = this.choices
         clone.choicesExpression = this.choicesExpression

@@ -1,5 +1,6 @@
 package com.netgrif.application.engine.workflow.service;
 
+import com.netgrif.application.engine.importer.service.FieldFactory;
 import com.netgrif.application.engine.petrinet.domain.I18nString;
 import com.netgrif.application.engine.petrinet.domain.dataset.ChoiceField;
 import com.netgrif.application.engine.petrinet.domain.dataset.Field;
@@ -11,6 +12,7 @@ import com.netgrif.application.engine.workflow.service.interfaces.IInitValueExpr
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,9 @@ public class InitValueExpressionEvaluator implements IInitValueExpressionEvaluat
 
     @Autowired
     private CaseFieldsExpressionRunner runner;
+
+    @Autowired
+    private FieldFactory fieldFactory;
 
     @Override
     public <T> T evaluate(Case useCase, Field<T> defaultField) {
@@ -40,13 +45,22 @@ public class InitValueExpressionEvaluator implements IInitValueExpressionEvaluat
     }
 
     @Override
-    public Set<I18nString> evaluateChoices(Case useCase, ChoiceField<?> field) {
+    public Set<Serializable> evaluateChoices(Case useCase, ChoiceField<?> field) {
         Object result = evaluate(useCase, field.getExpression());
         if (!(result instanceof Collection)) {
             throw new IllegalArgumentException("[" + useCase.getStringId() + "] Dynamic choices not an instance of Collection: " + field.getImportId());
         }
         Collection<Object> collection = (Collection) result;
-        return collection.stream().map(it -> (it instanceof I18nString) ? (I18nString) it : new I18nString(it.toString())).collect(Collectors.toCollection(LinkedHashSet::new));
+        return collection.stream()
+                .map(it -> {
+                    if (it instanceof String) {
+                        return new I18nString(it.toString());
+                    } else if (it instanceof Serializable) {
+                        return (Serializable) it;
+                    }
+                    return fieldFactory.resolveCollectionValue(it.toString(), field.getCollectionDataType());
+                })
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override

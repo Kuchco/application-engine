@@ -13,6 +13,7 @@ import com.querydsl.core.annotations.QueryType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class DataField implements Referencable {
@@ -24,7 +25,10 @@ public class DataField implements Referencable {
     private Object value;
 
     @Getter
-    private Set<I18nString> choices;
+    private Set<Serializable> choices;
+
+    @Getter
+    private Set<I18nString> userChoices;
 
     @Getter
     private List<String> allowedNets;
@@ -66,8 +70,13 @@ public class DataField implements Referencable {
         update();
     }
 
-    public void setChoices(Set<I18nString> choices) {
+    public void setChoices(Set<Serializable> choices) {
         this.choices = choices;
+        update();
+    }
+
+    public void setUserChoices(Set<I18nString> choices) {
+        this.userChoices = choices;
         update();
     }
 

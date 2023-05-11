@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Locale;
 
 @Data
-public class LocalisedFileListField extends LocalisedField {
+public class LocalisedFileListField extends LocalisedCollectionField {
 
     public LocalisedFileListField(FileListField field, Locale locale) {
         super(field, locale);

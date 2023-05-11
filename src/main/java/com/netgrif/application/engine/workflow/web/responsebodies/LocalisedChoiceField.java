@@ -2,26 +2,34 @@ package com.netgrif.application.engine.workflow.web.responsebodies;
 
 import com.netgrif.application.engine.petrinet.domain.I18nString;
 import com.netgrif.application.engine.petrinet.domain.dataset.ChoiceField;
+import com.netgrif.application.engine.petrinet.domain.dataset.FieldType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
-public class LocalisedChoiceField extends LocalisedField {
+public class LocalisedChoiceField extends LocalisedCollectionField {
 
-    protected List<String> choices;
+    protected List<Serializable> choices;
 
-    public LocalisedChoiceField(ChoiceField field, Locale locale) {
+    public LocalisedChoiceField(ChoiceField<?> field, Locale locale) {
         super(field, locale);
         this.choices = new LinkedList<>();
-        Set<I18nString> choices = field.getChoices();
-        for (I18nString choice : choices) {
-            this.choices.add(choice.getTranslation(locale));
+        List<Serializable> computedChoices = new ArrayList<>();
+        if (FieldType.I18N.equals(collectionType)) {
+            computedChoices.addAll(field.getChoices().stream()
+                    .map(choice -> ((I18nString) choice).getTranslation(locale))
+                    .collect(Collectors.toList()));
+        }
+        if (!computedChoices.isEmpty()) {
+            this.choices.addAll(computedChoices);
+        } else {
+            //TODO getTraslation value
+            this.choices.addAll(field.getChoices());
         }
     }
 }

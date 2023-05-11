@@ -227,7 +227,9 @@ public class Case {
                 this.dataSet.put(key, new DataField(field.getDefaultValue()));
             }
             if (field instanceof UserField) {
-                this.dataSet.get(key).setChoices(((UserField) field).getRoles().stream().map(I18nString::new).collect(Collectors.toSet()));
+                this.dataSet.get(key).setUserChoices(((UserField) field).getRoles().stream()
+                        .map(I18nString::new)
+                        .collect(Collectors.toSet()));
             }
             if (field instanceof FieldWithAllowedNets) {
                 this.dataSet.get(key).setAllowedNets(((FieldWithAllowedNets) field).getAllowedNets());

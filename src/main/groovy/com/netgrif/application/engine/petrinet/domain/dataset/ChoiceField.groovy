@@ -2,33 +2,43 @@ package com.netgrif.application.engine.petrinet.domain.dataset
 
 import com.netgrif.application.engine.petrinet.domain.I18nString
 import com.netgrif.application.engine.petrinet.domain.dataset.logic.action.runner.Expression
+import java.util.stream.Collectors
 
-abstract class ChoiceField<T> extends Field<T> {
+abstract class ChoiceField<T> extends CollectionField<T> {
 
-    protected Set<I18nString> choices
+    protected Set<Serializable> choices
     protected Expression choicesExpression
 
     ChoiceField() {
         super()
-        choices = new LinkedHashSet<I18nString>()
+        choices = new LinkedHashSet<Serializable>()
     }
 
-    ChoiceField(List<I18nString> values) {
-        this()
-        if (values != null)
-            this.choices.addAll(values)
+    ChoiceField(String collectionType) {
+        super(collectionType)
+        choices = new LinkedHashSet<Serializable>()
     }
 
-    ChoiceField(Expression expression) {
-        this()
+    ChoiceField(List<Serializable> choices, String collectionType) {
+        this(collectionType)
+        if (choices != null)
+            this.choices.addAll(choices)
+    }
+
+    ChoiceField(Expression expression, String collectionType) {
+        this(collectionType)
         this.choicesExpression = expression
     }
 
-    Set<I18nString> getChoices() {
+    Set<Serializable> getChoices() {
         return choices
     }
 
-    void setChoices(Set<I18nString> choices) {
+    Set<String> getStringChoices() {
+        return choices.stream().map(choice -> choice.toString()).collect(Collectors.toSet())
+    }
+
+    void setChoices(Set<Serializable> choices) {
         this.choices = choices
     }
 

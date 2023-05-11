@@ -3,7 +3,7 @@ package com.netgrif.application.engine.petrinet.domain.dataset
 import com.netgrif.application.engine.configuration.ApplicationContextProvider
 import com.netgrif.application.engine.workflow.domain.FileStorageConfiguration
 
-class FileFieldValue {
+class FileFieldValue implements Serializable {
 
     private String name
 

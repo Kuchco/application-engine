@@ -1,8 +1,8 @@
 package com.netgrif.application.engine.workflow.web.responsebodies;
 
 import com.netgrif.application.engine.petrinet.domain.I18nString;
+import com.netgrif.application.engine.petrinet.domain.dataset.CollectionField;
 import com.netgrif.application.engine.petrinet.domain.dataset.FieldType;
-import com.netgrif.application.engine.petrinet.domain.dataset.MultichoiceField;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -12,9 +12,8 @@ import java.util.List;
 import java.util.Locale;
 
 @Data
-public class LocalisedMultichoiceField extends LocalisedChoiceField {
-
-    public LocalisedMultichoiceField(MultichoiceField field, Locale locale) {
+public class LocalisedListField extends LocalisedCollectionField {
+    public LocalisedListField(CollectionField<List<Serializable>> field, Locale locale) {
         super(field, locale);
         this.setValue(new LinkedList<Serializable>());
         Collection<Serializable> values = field.getValue();

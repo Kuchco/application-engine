@@ -14,6 +14,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.Jsr310Converters;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
@@ -44,6 +45,9 @@ public class ApplicationEngine {
     public MongoCustomConversions customConversions() {
         List<Converter<?, ?>> converters = new ArrayList<>();
         converters.add(new StringToVersionConverter());
+        converters.add(Jsr310Converters.LocalDateTimeToDateConverter.INSTANCE);
+        converters.add(Jsr310Converters.DateToLocalDateTimeConverter.INSTANCE);
+        converters.add(Jsr310Converters.StringToLocalDateTimeConverter.INSTANCE);
         return new MongoCustomConversions(converters);
     }
 
