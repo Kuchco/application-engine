@@ -1,3 +1,39 @@
+# Master Thesis - Collections as a data type of a process oriented language
+
+This repository is part of a master thesis called "**Collections as a data type of a process oriented
+language**" by Bc. Adam Kuchcik.
+
+This repository builds on top of the **Netgrif Application Engine** and expands it by adding a feature presenting
+a new data type called **Collection** which combines all previous data types that resemble a collection.
+
+## Abstract
+
+SLOVAK UNIVERSITY OF TECHNOLOGY IN BRATISLAVA FACULTY OF ELECTRICAL ENGINEERING AND INFORMATION TECHNOLOGY
+
+- Study Programme: **Applied Informatics**
+
+- Author: **Bc. Adam Kuchcik**
+
+- Master’s thesis: **Collections as a data type of a process oriented language**
+
+- Supervisor: **prof. RNDr. Gabriel Juhás, PhD.**
+
+- Place and year of submission: **Bratislava 2023**
+
+
+The low-code languague Petriflow defines data variables and data types, which include data types that to a certain
+extent represent a collection of data. However, their limited implementation and lack of absraction limit their
+functionality. To solve this problem, in this thesis we're trying to create a new collection data type that merges the
+existing collection data types and increases their use cases. In the diploma thesis, we got acquainted with the
+Petriflow language, its data types, the interpreter of this language and the open-closed principle. We evaluated the
+existing data types of the collection and designed a flexible and scalable solution. We modified the Petriflow language
+interpreter to support the new data type with backend and frontend implementations. Collection data processing has been
+adapted to send and receive data between individual parts of the interpreter. We tested the functionality of the
+implementation and evaluated the benefits and expansion possibilities of the new data type.
+
+Documentation that follows is the original documentation of the NAE application which includes all the necessary
+information for running NAE on your platform.
+
 # Netgrif Application Engine
 
 [![License](https://img.shields.io/badge/license-NETGRIF%20Community%20License-green)](https://netgrif.com/license)
@@ -19,10 +55,14 @@ NAE provides additional components to make integration to your project/environme
 
 * Petriflow low-code language: [http://petriflow.com](https://petriflow.com)
 * Documentation: [https://engine.netgrif.com](https://engine.netgrif.com)
+
 <!-- * Getting Started: [https://engine.netgrif.com/get_started](https://engine.netgrif.com/get_started) -->
+
 * Issue Tracker: [GitHub issues](https://github.com/netgrif/application-engine/issues)
 * Java docs: [https://engine.netgrif.com/javadoc](https://engine.netgrif.com/javadoc)
+
 <!-- * Roadmap: [https://engine.netgrif.com/roadmap](https://engine.netgrif.com/#/roadmap) -->
+
 * License: [NETGRIF Community License](https://netgrif.com/license)
 
 ## Components
@@ -33,7 +73,8 @@ Netgrif Application Engine (or NAE for short) consists of several key components
     * **Process executions** - Process instance and task management
     * [**Actions and Events processing**](https://engine.netgrif.com/#/events/events) - Compiling and running action's
       code, handling events in processes
-    * [**Roles management and permissions resolution**](https://engine.netgrif.com/#/roles/permissions) - Permissions and
+    * [**Roles management and permissions resolution**](https://engine.netgrif.com/#/roles/permissions) - Permissions
+      and
       restrictions resolving for processes
     * [**Search and filters**](https://engine.netgrif.com/#/search/filter) - Indexing, querying and filter management.
 * **Authentication and authorization** - User management and application-wide permissions
@@ -52,11 +93,11 @@ Netgrif Application Engine (or NAE for short) consists of several key components
 The Application engine has some requirements for runtime environment. The following table is summary of requirements to
 run and use the engine:
 
-| Name                                                   | Version | Description                                                     | Recommendation                                                         |
-|--------------------------------------------------------|---------|-----------------------------------------------------------------|------------------------------------------------------------------------|
-| [Java](https://openjdk.java.net/)                      | 11+     | Java Development Kit                                            | [OpenJDK 11](https://openjdk.java.net/install/)                        |
-| [Redis](https://redis.io/)                             | 5+      | Key-value in-memory database used for user sessions and caching | [Redis 6.2.6](https://redis.io/download)                               |
-| [MongoDB](https://www.mongodb.com/)                    | 4.4+    | Main document store database                                    | [MongoDB 4.4.11](https://docs.mongodb.com/v4.4/installation/)          |
+| Name                                                   | Version | Description                                                     | Recommendation                                                                              |
+|--------------------------------------------------------|---------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| [Java](https://openjdk.java.net/)                      | 11+     | Java Development Kit                                            | [OpenJDK 11](https://openjdk.java.net/install/)                                             |
+| [Redis](https://redis.io/)                             | 5+      | Key-value in-memory database used for user sessions and caching | [Redis 6.2.6](https://redis.io/download)                                                    |
+| [MongoDB](https://www.mongodb.com/)                    | 4.4+    | Main document store database                                    | [MongoDB 4.4.11](https://docs.mongodb.com/v4.4/installation/)                               |
 | [Elasticsearch](https://www.elastic.co/elasticsearch/) | 7.17+   | Index database used for better application search               | [Elasticsearch 7.17.3](https://www.elastic.co/downloads/past-releases/elasticsearch-7-17-3) |
 
 If you are planning on developing docker container based solution you can use our [docker-compose](docker-compose.yml)
