@@ -54,6 +54,9 @@ public final class FieldFactory {
     // TODO: refactor this shit
     Field getField(Data data, Importer importer) throws IllegalArgumentException, MissingIconKeyException {
         Field field;
+        if (data.getType() == null) {
+            throw new IllegalArgumentException(String.format("Data type was not specified for field: %s", data.getId()));
+        }
         switch (data.getType()) {
             case COLLECTION:
                 field = buildCollectionField(data, importer);
