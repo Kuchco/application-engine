@@ -173,7 +173,7 @@ public final class FieldFactory {
 
     private MultichoiceField buildMultichoiceField(Data data, Importer importer) {
         MultichoiceField field;
-        String collectionDataType = data.getCollectionDataType() != null ? data.getCollectionDataType().value() : FieldType.I18N.name();
+        String collectionDataType = resolveSelectingCollectionDataType(data);
         field = new MultichoiceField(collectionDataType);
         if (data.getOptions() != null) {
             setFieldOptions(field, data, importer);
@@ -222,9 +222,9 @@ public final class FieldFactory {
     }
 
     private EnumerationField buildEnumerationField(Data data, Importer importer) {
-        EnumerationField field;
-        String collectionDataType = data.getCollectionDataType() != null ? data.getCollectionDataType().value() : FieldType.I18N.name();
-        field = new EnumerationField(collectionDataType);
+        String collectionDataType;
+        collectionDataType = resolveSelectingCollectionDataType(data);
+        EnumerationField field = new EnumerationField(collectionDataType);
         if (data.getOptions() != null) {
             setFieldOptions(field, data, importer);
         }
@@ -234,6 +234,18 @@ public final class FieldFactory {
             }
         });
         return field;
+    }
+
+    private static String resolveSelectingCollectionDataType(Data data) {
+        String collectionDataType;
+        if (data.getCollectionDataType() != null) {
+            collectionDataType = data.getCollectionDataType().value();
+            log.warn(String.format("Data type: %s is not supported for %s in the current version.",
+                    data.getCollectionDataType().value(), data.getCollectionType()));
+        } else {
+            collectionDataType = FieldType.I18N.name();
+        }
+        return collectionDataType;
     }
 
 //    private void setFieldChoices(ChoiceField<?> field, Data data, Importer importer) {
