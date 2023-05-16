@@ -840,7 +840,7 @@ public class DataService implements IDataService {
             return null;
         }
         return parsedValues.stream()
-                .map(val1 -> fieldFactory.resolveCollectionValue(val1, collectionDataType))
+                .map(val1 -> val1.equals("null") ? null : fieldFactory.resolveCollectionValue(val1, collectionDataType))
                 .collect(Collectors.toList());
     }
 

@@ -641,9 +641,14 @@ public final class FieldFactory {
                 ((FileListField) field).setValue(newValues);
             } else {
                 List<Serializable> parsedValues = ((Collection<?>) values).stream()
-                        .map(val -> val instanceof Serializable
-                                ? (Serializable) val
-                                : resolveCollectionValue(val.toString(), field.getCollectionDataType()))
+                        .map(val -> {
+                            if (val == null) {
+                                return null;
+                            } else if (val instanceof Serializable) {
+                                return (Serializable) val;
+                            }
+                            return resolveCollectionValue(val.toString(), field.getCollectionDataType());
+                        })
                         .collect(Collectors.toList());
                 ((ListField) field).setValue(parsedValues);
             }
