@@ -220,7 +220,13 @@ public class WorkflowService implements IWorkflowService {
         useCase.getUsers().clear();
         useCase.getNegativeViewUsers().clear();
         useCase.getUserRefs().forEach((id, permission) -> {
-            List<String> userIds = getExistingUsers((UserListFieldValue) useCase.getDataSet().get(id).getValue());
+            Object userListFieldValue = useCase.getDataSet().get(id).getValue();
+            List<String> userIds;
+            if (userListFieldValue instanceof Collection) {
+                userIds = getExistingUsers((Collection<?>) userListFieldValue);
+            } else {
+                userIds = null;
+            }
             if (userIds != null && userIds.size() != 0 && permission.containsKey("view") && !permission.get("view")) {
                 useCase.getNegativeViewUsers().addAll(userIds);
             } else if (userIds != null && userIds.size() != 0) {
@@ -231,12 +237,15 @@ public class WorkflowService implements IWorkflowService {
         return repository.save(useCase);
     }
 
-    private List<String> getExistingUsers(UserListFieldValue userListValue) {
+    private List<String> getExistingUsers(Collection<?> userListValue) {
         if (userListValue == null)
             return null;
-        return userListValue.getUserValues().stream().map(UserFieldValue::getId)
+        return userListValue.stream()
+                .filter(value -> value instanceof UserFieldValue)
+                .map(value -> ((UserFieldValue) value).getId())
                 .filter(id -> userService.resolveById(id, false) != null)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
 
     @Override
     public CreateCaseEventOutcome createCase(String netId, String title, String color, LoggedUser user, Locale locale) {

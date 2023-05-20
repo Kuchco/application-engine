@@ -292,7 +292,7 @@ public final class FieldFactory {
         }
 
         List<Serializable> options = (data.getOptions() == null) ? new ArrayList<>() : data.getOptions().getOption().stream()
-                .map(option -> resolveLol1(option, importer, field.getCollectionDataType()))
+                .map(option -> resolveFieldOption(option, importer, field.getCollectionDataType()))
                 .collect(Collectors.toList());
         field.getChoices().addAll(options);
     }
@@ -320,7 +320,7 @@ public final class FieldFactory {
         }
     }
 
-    private Serializable resolveLol1(I18NStringType option, Importer importer, String collectionDataType) {
+    private Serializable resolveFieldOption(I18NStringType option, Importer importer, String collectionDataType) {
         FieldType collectionDataTypeParsed = FieldType.fromString(collectionDataType);
         if (FieldType.I18N.equals(collectionDataTypeParsed)) {
             return importer.toI18NString(option);
@@ -416,13 +416,6 @@ public final class FieldFactory {
         UserField field = new UserField(roles);
         setDefaultValues(field, data, inits -> {
             field.setDefaultValue(null);
-        });
-        return field;
-    }
-
-    private UserListField buildUserListField(Data data) {
-        UserListField field = new UserListField();
-        setDefaultValues(field, data, inits -> {
         });
         return field;
     }

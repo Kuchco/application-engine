@@ -797,13 +797,6 @@ public class DataService implements IDataService {
                 value = parseListStringValues(node);
                 // TODO 29.9.2020: validate task ref value? is such feature desired?
                 break;
-            case "userList":
-                if (node.get("value") == null) {
-                    value = null;
-                    break;
-                }
-                value = makeUserListFieldValue(node);
-                break;
             case "button":
                 if (node.get("value") == null) {
                     if (dataField.getValue() == null) {
@@ -849,15 +842,6 @@ public class DataService implements IDataService {
         HashSet<Serializable> set = new HashSet<>();
         arrayNode.forEach(item -> set.add(fieldFactory.resolveCollectionValue(item.asText(), collectionDataType)));
         return set;
-    }
-
-    private UserListFieldValue makeUserListFieldValue(ObjectNode nodes) {
-        List<String> userIds = parseListStringValues(nodes);
-
-        if (userIds == null) {
-            return null;
-        }
-        return new UserListFieldValue(userIds.stream().map(this::makeUserFieldValue).collect(Collectors.toList()));
     }
 
     private List<String> parseListStringValues(ObjectNode node) {

@@ -6,14 +6,15 @@ import com.netgrif.application.engine.pdf.generator.domain.PdfTextField;
 import com.netgrif.application.engine.petrinet.domain.DataGroup;
 import com.netgrif.application.engine.petrinet.domain.dataset.*;
 import com.netgrif.application.engine.utils.DateUtils;
+import com.netgrif.application.engine.workflow.web.responsebodies.LocalisedCollectionField;
 import com.netgrif.application.engine.workflow.web.responsebodies.LocalisedField;
 import org.jsoup.Jsoup;
-
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -46,14 +47,12 @@ public class TextFieldBuilder extends FieldBuilder {
             case FILE:
                 value = field.getValue() != null ? shortenFileName(((FileFieldValue) field.getValue()).getName()) : "";
                 break;
-            case FILELIST:
-                value = field.getValue() != null ? resolveFileListNames((FileListFieldValue) field.getValue()) : "";
-                break;
             case USER:
                 value = field.getValue() != null ? ((UserFieldValue) field.getValue()).getFullName() : "";
                 break;
-            case USERLIST:
-                value = field.getValue() != null ? ((UserListFieldValue) field.getValue()).getUserValues().stream().map(UserFieldValue::getFullName).collect(Collectors.joining(", ")) : "";
+            case LIST:
+                value = field.getValue() != null ? resolveListValues((Collection<?>) field.getValue(),
+                        ((LocalisedCollectionField) field).getCollectionType()) : "";
                 break;
             default:
                 value = field.getValue() != null ? Jsoup.parse(field.getValue().toString()).text() : "";
@@ -92,12 +91,30 @@ public class TextFieldBuilder extends FieldBuilder {
         }
     }
 
-    private String resolveFileListNames(FileListFieldValue files) {
+    private String resolveListValues(Collection<?> values, FieldType collectionDataType) {
+        switch (collectionDataType) {
+            case USER:
+                return values.stream()
+                        .filter(value -> value instanceof UserFieldValue)
+                        .map(value -> ((UserFieldValue) value).getFullName())
+                        .collect(Collectors.joining(", "));
+            case FILE:
+                return resolveFileListNames(values);
+            default:
+                return values.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
+        }
+    }
+
+    private String resolveFileListNames(Collection<?> files) {
         StringBuilder builder = new StringBuilder();
 
-        files.getNamesPaths().forEach(value -> {
-            builder.append(shortenFileName(value.getName()));
-            builder.append(", ");
+        files.forEach(value -> {
+            if (value instanceof FileFieldValue) {
+                builder.append(shortenFileName(((FileFieldValue) value).getName()));
+                builder.append(", ");
+            }
         });
 
         return builder.toString();

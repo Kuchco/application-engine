@@ -652,7 +652,7 @@ class ActionDelegate {
         }
         if (value == null && useCase.dataSet.get(field.stringId).value != null) {
             if (field instanceof FileListField && task.isPresent()) {
-                field.value.namesPaths.forEach(namePath -> {
+                field.value.forEach(namePath -> {
                     dataService.deleteFileByName(task.get().stringId, field.stringId, namePath.name)
                 })
             }
@@ -670,10 +670,11 @@ class ActionDelegate {
             if (field instanceof NumberField) {
                 value = value as Double
             }
-            if (field instanceof UserListField && (value instanceof String[] || value instanceof List)) {
+            if (field instanceof ListField && FieldType.USER.getName() == field.getCollectionDataType()
+                    && (value instanceof String[] || value instanceof List)) {
                 List<UserFieldValue> users = [] as List
                 value.each {id -> users.add(new UserFieldValue(userService.findById(id as String, false)))}
-                value = new UserListFieldValue(users)
+                value = users
             }
             field.value = value
             saveChangedValue(field)

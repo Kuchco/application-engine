@@ -17,7 +17,6 @@ import com.netgrif.application.engine.petrinet.domain.arcs.ArcOrderComparator;
 import com.netgrif.application.engine.petrinet.domain.arcs.ResetArc;
 import com.netgrif.application.engine.petrinet.domain.dataset.Field;
 import com.netgrif.application.engine.petrinet.domain.dataset.UserFieldValue;
-import com.netgrif.application.engine.petrinet.domain.dataset.UserListFieldValue;
 import com.netgrif.application.engine.petrinet.domain.events.EventPhase;
 import com.netgrif.application.engine.petrinet.domain.events.EventType;
 import com.netgrif.application.engine.petrinet.domain.roles.ProcessRole;
@@ -721,7 +720,13 @@ public class TaskService implements ITaskService {
         task.getUsers().clear();
         task.getNegativeViewUsers().clear();
         task.getUserRefs().forEach((id, permission) -> {
-            List<String> userIds = getExistingUsers((UserListFieldValue) useCase.getDataSet().get(id).getValue());
+            Object userListFieldValue = useCase.getDataSet().get(id).getValue();
+            List<String> userIds;
+            if (userListFieldValue instanceof Collection) {
+                userIds = getExistingUsers((Collection<?>) userListFieldValue);
+            } else {
+                userIds = null;
+            }
             if (userIds != null && userIds.size() != 0 && permission.containsKey("view") && !permission.get("view")) {
                 task.getNegativeViewUsers().addAll(userIds);
             } else if (userIds != null && userIds.size() != 0) {
@@ -732,10 +737,12 @@ public class TaskService implements ITaskService {
         return taskRepository.save(task);
     }
 
-    private List<String> getExistingUsers(UserListFieldValue userListValue) {
+    private List<String> getExistingUsers(Collection<?> userListValue) {
         if (userListValue == null)
             return null;
-        return userListValue.getUserValues().stream().map(UserFieldValue::getId)
+        return userListValue.stream()
+                .filter(value -> value instanceof UserFieldValue)
+                .map(value -> ((UserFieldValue) value).getId())
                 .filter(id -> userService.resolveById(id, false) != null)
                 .collect(Collectors.toList());
     }

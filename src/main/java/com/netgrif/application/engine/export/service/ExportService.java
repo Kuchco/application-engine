@@ -240,6 +240,7 @@ class ExportService implements IExportService {
         if (field.getValue() == null && exportCase.getDataSet().get(exportFieldId).getValue() == null) {
             return "";
         }
+        //TODO check if @fieldData is being correctly cast
         switch (field.getType()) {
             case MULTICHOICE_MAP:
                 fieldValue = ((MultichoiceMapField) fieldData).getValue().stream()
@@ -256,9 +257,6 @@ class ExportService implements IExportService {
             case FILE:
                 fieldValue = ((FileField) fieldData).getValue().toString();
                 break;
-            case FILELIST:
-                fieldValue = String.join(",", ((FileListField) fieldData).getValue().stream().map(FileFieldValue::toString).collect(Collectors.toSet()));
-                break;
             case TASK_REF:
                 fieldValue = String.join(";", ((TaskField) fieldData).getValue());
                 break;
@@ -271,16 +269,35 @@ class ExportService implements IExportService {
             case DATETIME:
                 fieldValue =((Date) fieldData).toString();
                 break;
-            case USERLIST:
-                fieldValue = ((UserListField) fieldData).getValue().getUserValues().stream().map(UserFieldValue::getId).collect(Collectors.joining(";"));
-                break;
             case NUMBER:
                 fieldValue = fieldData.toString();
+                break;
+            case LIST:
+                fieldValue = resolveListFieldValue((CollectionField<?>) fieldData,
+                        ((CollectionField<?>) field).getCollectionDataType());
                 break;
             default:
                 fieldValue = fieldData == null ? (String) exportCase.getDataSet().get(exportFieldId).getValue() : (String) fieldData;
                 break;
         }
         return fieldValue;
+    }
+
+    private String resolveListFieldValue(CollectionField<?> listField, String collectionDataType) {
+        switch (FieldType.fromString(collectionDataType)) {
+            case USER:
+                return ((ListField) listField).getValue().stream()
+                        .filter(value -> value instanceof UserFieldValue)
+                        .map(value -> ((UserFieldValue) value).getId())
+                        .collect(Collectors.joining(";"));
+            case FILE:
+                return ((FileListField) listField).getValue().stream()
+                        .map(FileFieldValue::toString)
+                        .collect(Collectors.joining(","));
+            default:
+                return ((ListField) listField).getValue().stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
+        }
     }
 }

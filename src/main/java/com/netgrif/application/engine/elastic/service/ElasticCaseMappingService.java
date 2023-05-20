@@ -1,7 +1,5 @@
 package com.netgrif.application.engine.elastic.service;
 
-
-import com.netgrif.application.engine.auth.domain.IUser;
 import com.netgrif.application.engine.auth.service.interfaces.IUserService;
 import com.netgrif.application.engine.elastic.domain.BooleanField;
 import com.netgrif.application.engine.elastic.domain.ButtonField;
@@ -27,7 +25,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,6 +51,7 @@ public class ElasticCaseMappingService implements IElasticCaseMappingService {
         Field netField = useCase.getField(fieldId);
         com.netgrif.application.engine.workflow.domain.DataField caseField = useCase.getDataField(fieldId);
 
+        //TODO transform ListField
         if (caseField.getValue() == null) {
             return Optional.empty();
         } else if (netField instanceof EnumerationMapField) {
@@ -203,8 +201,11 @@ public class ElasticCaseMappingService implements IElasticCaseMappingService {
     }
 
     protected Optional<DataField> transformUserListField(com.netgrif.application.engine.workflow.domain.DataField userListField) {
-        UserListFieldValue userListValue = (UserListFieldValue) userListField.getValue();
-        UserField.UserMappingData[] userMappingData = userListValue.getUserValues().stream().map(this::transformUserListValue).toArray(UserField.UserMappingData[]::new);
+        Collection<?> userListValue = (Collection<?>) userListField.getValue();
+        UserField.UserMappingData[] userMappingData = userListValue.stream()
+                .filter(value -> value instanceof UserFieldValue)
+                .map(value -> transformUserListValue((UserFieldValue) value))
+                .toArray(UserField.UserMappingData[]::new);
         return Optional.of(new UserListField(userMappingData));
     }
 
@@ -284,7 +285,7 @@ public class ElasticCaseMappingService implements IElasticCaseMappingService {
     }
 
     protected Optional<DataField> transformFileListField(com.netgrif.application.engine.workflow.domain.DataField fileListField) {
-        return Optional.of(new FileField(((FileListFieldValue) fileListField.getValue()).getNamesPaths().toArray(new FileFieldValue[0])));
+        return Optional.of(new FileField(((HashSet<FileFieldValue>) fileListField.getValue()).toArray(new FileFieldValue[0])));
     }
 
     protected Optional<DataField> transformOtherFields(com.netgrif.application.engine.workflow.domain.DataField otherField, Field netField) {
