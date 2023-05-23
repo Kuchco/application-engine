@@ -6,6 +6,13 @@ language**" by Bc. Adam Kuchcik.
 This repository builds on top of the **Netgrif Application Engine** and expands it by adding a feature presenting
 a new data type called **Collection** which combines all previous data types that resemble a collection.
 
+## Resources 
+
+Petri net on the path ```src/main/resources/petriNets/collection_data_type.xml``` should contain all data fields
+that were tested in the thesis. This Petri net serves as a demo for the collection data type.
+
+You can use this Petri net and test the collection data type yourself.
+
 ## Abstract
 
 SLOVAK UNIVERSITY OF TECHNOLOGY IN BRATISLAVA FACULTY OF ELECTRICAL ENGINEERING AND INFORMATION TECHNOLOGY

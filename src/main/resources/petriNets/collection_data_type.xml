@@ -1,0 +1,225 @@
+<document xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://petriflow.com/petriflow.schema.xsd">
+	<id>collection_data_type</id>
+	<initials>CDT</initials>
+	<title>Collection Data Type</title>
+	<icon>device_hub</icon>
+	<defaultRole>true</defaultRole>
+	<anonymousRole>true</anonymousRole>
+	<transitionRole>false</transitionRole>
+	<data type="collection" collectionType="enumeration">
+		<id>enumeration_0</id>
+		<title/>
+		<options>
+			<option key="key1">EnumValue 1</option>
+			<option key="key2">EnumValue 2</option>
+			<option key="key3">EnumValue 3</option>
+		</options>
+	</data>
+	<data type="collection" collectionType="multichoice">
+		<id>multichoice_0</id>
+		<title/>
+		<options>
+			<option key="key4">MultichoiceValue 1</option>
+			<option key="key5">MultichoiceValue 2</option>
+			<option key="key6">MultichoiceValue 3</option>
+		</options>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="user">
+		<id>userList_0</id>
+		<title/>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="file">
+		<id>fileList_1</id>
+		<title/>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="text">
+		<id>textList_2</id>
+		<title/>
+		<inits>
+			<init>Hodnota 1</init>
+			<init>Hodnota 2</init>
+		</inits>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="number">
+		<id>numberList_3</id>
+		<title/>
+		<inits>
+			<init>4</init>
+			<init>2</init>
+		</inits>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="date">
+		<id>dateList_4</id>
+		<title/>
+		<inits>
+			<init>17.12.2009</init>
+			<init>14.02.2021</init>
+		</inits>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="dateTime">
+		<id>dateTimeList_5</id>
+		<title/>
+		<inits>
+			<init>05.11.2021 16:59:13</init>
+			<init>26.05.2020 22:10:15</init>
+		</inits>
+	</data>
+	<data type="collection" collectionType="list" collectionDataType="i18n">
+		<id>i18nList_6</id>
+		<title/>
+		<inits>
+			<init>value1</init>
+			<init>value2</init>
+			<init>value3</init>
+		</inits>
+	</data>
+	<transition>
+		<id>t1</id>
+		<x>561</x>
+		<y>256</y>
+		<label/>
+		<dataGroup>
+			<id>t1_0</id>
+			<cols>4</cols>
+			<layout>grid</layout>
+			<dataRef>
+				<id>enumeration_0</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>multichoice_0</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>userList_0</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>fileList_1</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>0</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>textList_2</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>0</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>numberList_3</id>
+				<logic>
+					<behavior>visible</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>1</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>dateList_4</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>2</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>dateTimeList_5</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>3</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+			<dataRef>
+				<id>i18nList_6</id>
+				<logic>
+					<behavior>editable</behavior>
+				</logic>
+				<layout>
+					<x>2</x>
+					<y>4</y>
+					<rows>1</rows>
+					<cols>2</cols>
+					<template>material</template>
+					<appearance>outline</appearance>
+				</layout>
+			</dataRef>
+		</dataGroup>
+		<event type="assign">
+			<id>t1_assign</id>
+		</event>
+		<event type="finish">
+			<id>t1_finish</id>
+		</event>
+		<event type="cancel">
+			<id>t1_cancel</id>
+		</event>
+		<event type="delegate">
+			<id>t1_delegate</id>
+		</event>
+	</transition>
+</document>
